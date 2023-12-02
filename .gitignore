@@ -19,6 +19,5 @@ target/
 
 data
 
-!data/inputs/.keep
-!data/examples/.keep
 !data/puzzles/.keep
+!data/inputs/.keep
