@@ -5,9 +5,9 @@ use std::cmp;
 
 #[derive(Default, Debug, Clone)]
 pub struct Cubes {
-    red: u8,
-    green: u8,
-    blue: u8,
+    red: u32,
+    green: u32,
+    blue: u32,
 }
 
 impl Cubes {
@@ -47,7 +47,7 @@ pub fn part_two(input: &str) -> Option<u32> {
             });
             cube.clone()
         })
-        .map(|c| c.red as u32 * c.green as u32 * c.blue as u32)
+        .map(|c| c.red * c.green * c.blue)
         .sum();
     Some(power)
 }
