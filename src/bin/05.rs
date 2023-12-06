@@ -1,14 +1,49 @@
+use itertools::Itertools;
 use std::collections::BTreeMap;
 
 advent_of_code::solution!(5);
 
 pub fn part_one(input: &str) -> Option<u32> {
     let almanac = parse(input);
+    let seeds = almanac.seeds.clone();
+    let result = compute_min_location(almanac, seeds);
+    Some(result)
+}
+
+pub fn part_two(input: &str) -> Option<u32> {
+    let almanac = parse(input);
+    let mut seeds = vec![];
+    almanac
+        .seeds
+        .iter()
+        .chunks(2)
+        .into_iter()
+        .for_each(|mut chunk| {
+            let start = *chunk.next().unwrap();
+            let length = *chunk.next().unwrap();
+            (start..start + length).for_each(|s| {
+                seeds.push(s);
+            });
+        });
+    dbg!(seeds);
+    todo!();
+    // .for_each(|chunk| {
+    //     dbg!(chunk);
+    //     todo!();
+    // });
+
+    // let seeds = almanac.seeds.clone();
+    let result = compute_min_location(almanac, seeds);
+    Some(result)
+}
+
+pub fn compute_min_location(almanac: Almanac, seeds: Vec<u64>) -> u32 {
+    // ok, keeping path of mappings is unnecessary and too much memory, really just need one value
     let mut paths = BTreeMap::new();
-    almanac.seeds.iter().for_each(|seed| {
+    seeds.iter().for_each(|seed| {
         paths.insert(seed, vec![]);
     });
-    almanac.seeds.iter().for_each(|seed| {
+    seeds.iter().for_each(|seed| {
         let mut found = false;
         almanac.seeds_to_soil.iter().for_each(|rule| {
             if (rule.source_range_start..rule.source_range_start + rule.range_length)
@@ -25,7 +60,7 @@ pub fn part_one(input: &str) -> Option<u32> {
             paths.entry(seed).and_modify(|e| e.push(*seed));
         }
     });
-    almanac.seeds.iter().for_each(|seed| {
+    seeds.iter().for_each(|seed| {
         let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
         let mut found = false;
         almanac.soil_to_fertilizer.iter().for_each(|rule| {
@@ -43,7 +78,7 @@ pub fn part_one(input: &str) -> Option<u32> {
             paths.entry(seed).and_modify(|e| e.push(next_val));
         }
     });
-    almanac.seeds.iter().for_each(|seed| {
+    seeds.iter().for_each(|seed| {
         let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
         let mut found = false;
         almanac.fertilizer_to_water.iter().for_each(|rule| {
@@ -61,7 +96,7 @@ pub fn part_one(input: &str) -> Option<u32> {
             paths.entry(seed).and_modify(|e| e.push(next_val));
         }
     });
-    almanac.seeds.iter().for_each(|seed| {
+    seeds.iter().for_each(|seed| {
         let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
         let mut found = false;
         almanac.water_to_light.iter().for_each(|rule| {
@@ -79,7 +114,7 @@ pub fn part_one(input: &str) -> Option<u32> {
             paths.entry(seed).and_modify(|e| e.push(next_val));
         }
     });
-    almanac.seeds.iter().for_each(|seed| {
+    seeds.iter().for_each(|seed| {
         let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
         let mut found = false;
         almanac.light_to_temperature.iter().for_each(|rule| {
@@ -97,7 +132,7 @@ pub fn part_one(input: &str) -> Option<u32> {
             paths.entry(seed).and_modify(|e| e.push(next_val));
         }
     });
-    almanac.seeds.iter().for_each(|seed| {
+    seeds.iter().for_each(|seed| {
         let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
         let mut found = false;
         almanac.temperature_to_humidity.iter().for_each(|rule| {
@@ -115,7 +150,7 @@ pub fn part_one(input: &str) -> Option<u32> {
             paths.entry(seed).and_modify(|e| e.push(next_val));
         }
     });
-    almanac.seeds.iter().for_each(|seed| {
+    seeds.iter().for_each(|seed| {
         let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
         let mut found = false;
         almanac.humidity_to_location.iter().for_each(|rule| {
@@ -133,17 +168,12 @@ pub fn part_one(input: &str) -> Option<u32> {
             paths.entry(seed).and_modify(|e| e.push(next_val));
         }
     });
-    Some(
-        *paths
-            .iter()
-            .map(|(_seed, path)| path.iter().last().unwrap())
-            .min()
-            .unwrap() as u32,
-    )
-}
 
-pub fn part_two(_input: &str) -> Option<u32> {
-    None
+    *paths
+        .iter()
+        .map(|(_seed, path)| path.iter().last().unwrap())
+        .min()
+        .unwrap() as u32
 }
 
 #[derive(Copy, Clone, Debug, Default)]
