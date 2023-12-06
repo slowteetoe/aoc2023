@@ -11,8 +11,11 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
+    todo!("NOPE, still too slow - have to look at mathematical solutions");
+
     let almanac = parse(input);
     let mut seeds = vec![];
+
     almanac
         .seeds
         .iter()
@@ -25,14 +28,6 @@ pub fn part_two(input: &str) -> Option<u32> {
                 seeds.push(s);
             });
         });
-    dbg!(seeds);
-    todo!();
-    // .for_each(|chunk| {
-    //     dbg!(chunk);
-    //     todo!();
-    // });
-
-    // let seeds = almanac.seeds.clone();
     let result = compute_min_location(almanac, seeds);
     Some(result)
 }
@@ -41,7 +36,7 @@ pub fn compute_min_location(almanac: Almanac, seeds: Vec<u64>) -> u32 {
     // ok, keeping path of mappings is unnecessary and too much memory, really just need one value
     let mut paths = BTreeMap::new();
     seeds.iter().for_each(|seed| {
-        paths.insert(seed, vec![]);
+        paths.insert(seed, seed.clone());
     });
     seeds.iter().for_each(|seed| {
         let mut found = false;
@@ -52,16 +47,13 @@ pub fn compute_min_location(almanac: Almanac, seeds: Vec<u64>) -> u32 {
                 // figure out index in source_range, then translate over to dest_range_start
                 let dx = seed - rule.source_range_start;
                 let dest_value = rule.dest_range_start + dx;
-                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                paths.entry(seed).and_modify(|e| *e = dest_value);
                 found = true;
             }
         });
-        if !found {
-            paths.entry(seed).and_modify(|e| e.push(*seed));
-        }
     });
     seeds.iter().for_each(|seed| {
-        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let next_val = *paths.get(seed).unwrap();
         let mut found = false;
         almanac.soil_to_fertilizer.iter().for_each(|rule| {
             if (rule.source_range_start..rule.source_range_start + rule.range_length)
@@ -70,16 +62,16 @@ pub fn compute_min_location(almanac: Almanac, seeds: Vec<u64>) -> u32 {
                 // figure out index in source_range, then translate over to dest_range_start
                 let dx = next_val - rule.source_range_start;
                 let dest_value = rule.dest_range_start + dx;
-                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                paths.entry(seed).and_modify(|e| *e = dest_value);
                 found = true;
             }
         });
         if !found {
-            paths.entry(seed).and_modify(|e| e.push(next_val));
+            paths.entry(seed).and_modify(|e| *e = next_val);
         }
     });
     seeds.iter().for_each(|seed| {
-        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let next_val = *paths.get(seed).unwrap();
         let mut found = false;
         almanac.fertilizer_to_water.iter().for_each(|rule| {
             if (rule.source_range_start..rule.source_range_start + rule.range_length)
@@ -88,16 +80,16 @@ pub fn compute_min_location(almanac: Almanac, seeds: Vec<u64>) -> u32 {
                 // figure out index in source_range, then translate over to dest_range_start
                 let dx = next_val - rule.source_range_start;
                 let dest_value = rule.dest_range_start + dx;
-                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                paths.entry(seed).and_modify(|e| *e = dest_value);
                 found = true;
             }
         });
         if !found {
-            paths.entry(seed).and_modify(|e| e.push(next_val));
+            paths.entry(seed).and_modify(|e| *e = next_val);
         }
     });
     seeds.iter().for_each(|seed| {
-        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let next_val = *paths.get(seed).unwrap();
         let mut found = false;
         almanac.water_to_light.iter().for_each(|rule| {
             if (rule.source_range_start..rule.source_range_start + rule.range_length)
@@ -106,16 +98,16 @@ pub fn compute_min_location(almanac: Almanac, seeds: Vec<u64>) -> u32 {
                 // figure out index in source_range, then translate over to dest_range_start
                 let dx = next_val - rule.source_range_start;
                 let dest_value = rule.dest_range_start + dx;
-                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                paths.entry(seed).and_modify(|e| *e = dest_value);
                 found = true;
             }
         });
         if !found {
-            paths.entry(seed).and_modify(|e| e.push(next_val));
+            paths.entry(seed).and_modify(|e| *e = next_val);
         }
     });
     seeds.iter().for_each(|seed| {
-        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let next_val = *paths.get(seed).unwrap();
         let mut found = false;
         almanac.light_to_temperature.iter().for_each(|rule| {
             if (rule.source_range_start..rule.source_range_start + rule.range_length)
@@ -124,16 +116,16 @@ pub fn compute_min_location(almanac: Almanac, seeds: Vec<u64>) -> u32 {
                 // figure out index in source_range, then translate over to dest_range_start
                 let dx = next_val - rule.source_range_start;
                 let dest_value = rule.dest_range_start + dx;
-                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                paths.entry(seed).and_modify(|e| *e = dest_value);
                 found = true;
             }
         });
         if !found {
-            paths.entry(seed).and_modify(|e| e.push(next_val));
+            paths.entry(seed).and_modify(|e| *e = next_val);
         }
     });
     seeds.iter().for_each(|seed| {
-        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let next_val = *paths.get(seed).unwrap();
         let mut found = false;
         almanac.temperature_to_humidity.iter().for_each(|rule| {
             if (rule.source_range_start..rule.source_range_start + rule.range_length)
@@ -142,16 +134,16 @@ pub fn compute_min_location(almanac: Almanac, seeds: Vec<u64>) -> u32 {
                 // figure out index in source_range, then translate over to dest_range_start
                 let dx = next_val - rule.source_range_start;
                 let dest_value = rule.dest_range_start + dx;
-                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                paths.entry(seed).and_modify(|e| *e = dest_value);
                 found = true;
             }
         });
         if !found {
-            paths.entry(seed).and_modify(|e| e.push(next_val));
+            paths.entry(seed).and_modify(|e| *e = next_val);
         }
     });
     seeds.iter().for_each(|seed| {
-        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let next_val = *paths.get(seed).unwrap();
         let mut found = false;
         almanac.humidity_to_location.iter().for_each(|rule| {
             if (rule.source_range_start..rule.source_range_start + rule.range_length)
@@ -160,20 +152,16 @@ pub fn compute_min_location(almanac: Almanac, seeds: Vec<u64>) -> u32 {
                 // figure out index in source_range, then translate over to dest_range_start
                 let dx = next_val - rule.source_range_start;
                 let dest_value = rule.dest_range_start + dx;
-                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                paths.entry(seed).and_modify(|e| *e = dest_value);
                 found = true;
             }
         });
         if !found {
-            paths.entry(seed).and_modify(|e| e.push(next_val));
+            paths.entry(seed).and_modify(|e| *e = next_val);
         }
     });
 
-    *paths
-        .iter()
-        .map(|(_seed, path)| path.iter().last().unwrap())
-        .min()
-        .unwrap() as u32
+    *paths.iter().map(|(_seed, path)| path).min().unwrap() as u32
 }
 
 #[derive(Copy, Clone, Debug, Default)]
