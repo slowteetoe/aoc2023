@@ -1,9 +1,145 @@
+use std::collections::BTreeMap;
+
 advent_of_code::solution!(5);
 
 pub fn part_one(input: &str) -> Option<u32> {
     let almanac = parse(input);
-    dbg!(&almanac);
-    None
+    let mut paths = BTreeMap::new();
+    almanac.seeds.iter().for_each(|seed| {
+        paths.insert(seed, vec![]);
+    });
+    almanac.seeds.iter().for_each(|seed| {
+        let mut found = false;
+        almanac.seeds_to_soil.iter().for_each(|rule| {
+            if (rule.source_range_start..rule.source_range_start + rule.range_length)
+                .contains(&seed)
+            {
+                // figure out index in source_range, then translate over to dest_range_start
+                let dx = seed - rule.source_range_start;
+                let dest_value = rule.dest_range_start + dx;
+                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                found = true;
+            }
+        });
+        if !found {
+            paths.entry(seed).and_modify(|e| e.push(*seed));
+        }
+    });
+    almanac.seeds.iter().for_each(|seed| {
+        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let mut found = false;
+        almanac.soil_to_fertilizer.iter().for_each(|rule| {
+            if (rule.source_range_start..rule.source_range_start + rule.range_length)
+                .contains(&next_val)
+            {
+                // figure out index in source_range, then translate over to dest_range_start
+                let dx = next_val - rule.source_range_start;
+                let dest_value = rule.dest_range_start + dx;
+                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                found = true;
+            }
+        });
+        if !found {
+            paths.entry(seed).and_modify(|e| e.push(next_val));
+        }
+    });
+    almanac.seeds.iter().for_each(|seed| {
+        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let mut found = false;
+        almanac.fertilizer_to_water.iter().for_each(|rule| {
+            if (rule.source_range_start..rule.source_range_start + rule.range_length)
+                .contains(&next_val)
+            {
+                // figure out index in source_range, then translate over to dest_range_start
+                let dx = next_val - rule.source_range_start;
+                let dest_value = rule.dest_range_start + dx;
+                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                found = true;
+            }
+        });
+        if !found {
+            paths.entry(seed).and_modify(|e| e.push(next_val));
+        }
+    });
+    almanac.seeds.iter().for_each(|seed| {
+        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let mut found = false;
+        almanac.water_to_light.iter().for_each(|rule| {
+            if (rule.source_range_start..rule.source_range_start + rule.range_length)
+                .contains(&next_val)
+            {
+                // figure out index in source_range, then translate over to dest_range_start
+                let dx = next_val - rule.source_range_start;
+                let dest_value = rule.dest_range_start + dx;
+                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                found = true;
+            }
+        });
+        if !found {
+            paths.entry(seed).and_modify(|e| e.push(next_val));
+        }
+    });
+    almanac.seeds.iter().for_each(|seed| {
+        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let mut found = false;
+        almanac.light_to_temperature.iter().for_each(|rule| {
+            if (rule.source_range_start..rule.source_range_start + rule.range_length)
+                .contains(&next_val)
+            {
+                // figure out index in source_range, then translate over to dest_range_start
+                let dx = next_val - rule.source_range_start;
+                let dest_value = rule.dest_range_start + dx;
+                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                found = true;
+            }
+        });
+        if !found {
+            paths.entry(seed).and_modify(|e| e.push(next_val));
+        }
+    });
+    almanac.seeds.iter().for_each(|seed| {
+        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let mut found = false;
+        almanac.temperature_to_humidity.iter().for_each(|rule| {
+            if (rule.source_range_start..rule.source_range_start + rule.range_length)
+                .contains(&next_val)
+            {
+                // figure out index in source_range, then translate over to dest_range_start
+                let dx = next_val - rule.source_range_start;
+                let dest_value = rule.dest_range_start + dx;
+                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                found = true;
+            }
+        });
+        if !found {
+            paths.entry(seed).and_modify(|e| e.push(next_val));
+        }
+    });
+    almanac.seeds.iter().for_each(|seed| {
+        let next_val = *paths.get(seed).unwrap().iter().last().unwrap();
+        let mut found = false;
+        almanac.humidity_to_location.iter().for_each(|rule| {
+            if (rule.source_range_start..rule.source_range_start + rule.range_length)
+                .contains(&next_val)
+            {
+                // figure out index in source_range, then translate over to dest_range_start
+                let dx = next_val - rule.source_range_start;
+                let dest_value = rule.dest_range_start + dx;
+                paths.entry(seed).and_modify(|e| e.push(dest_value));
+                found = true;
+            }
+        });
+        if !found {
+            paths.entry(seed).and_modify(|e| e.push(next_val));
+        }
+    });
+    Some(
+        *paths
+            .iter()
+            .map(|(_seed, path)| path.iter().last().unwrap())
+            .min()
+            .unwrap() as u32,
+    )
 }
 
 pub fn part_two(_input: &str) -> Option<u32> {
@@ -31,7 +167,7 @@ pub struct Almanac {
 
 pub fn parse(input: &str) -> Almanac {
     let mut alm = Almanac::default();
-    let mut dest = &mut alm.seeds_to_soil;
+    let mut dest = "";
     input.lines().for_each(|line| {
         if line.starts_with("seeds: ") {
             alm.seeds = line
@@ -43,31 +179,32 @@ pub fn parse(input: &str) -> Almanac {
                 .split_ascii_whitespace()
                 .map(|n| n.trim().parse::<u64>().expect("should have been a seed id"))
                 .collect();
-        } else if line.starts_with("seed-to-soil") {
-            // dest = &mut alm.seeds_to_soil;
-        } else if line.starts_with("soil-to-fertilizer") {
-            dest = &mut alm.soil_to_fertilizer;
-        } else if line.starts_with("fertilizer-to-water") {
-            dest = &mut &alm.fertilizer_to_water;
-        } else if line.starts_with("water-to-light") {
-            dest = &mut alm.water_to_light;
-        } else if line.starts_with("light-to-temperature") {
-            dest = &mut alm.light_to_temperature;
-        } else if line.starts_with("temperature-to-humidity") {
-            dest = &mut alm.temperature_to_humidity;
-        } else if line.starts_with("humidity-to-location") {
-            dest = &mut alm.humidity_to_location;
+        } else if line.ends_with(" map:") {
+            dest = line
+                .split(" map:")
+                .nth(0)
+                .expect("should have found the mapping name");
+        } else if line == "" {
         } else {
-            // do nothing for now
             let p: Vec<u64> = line
                 .split_whitespace()
                 .map(|c| c.trim().parse::<u64>().unwrap())
                 .collect();
-            dest.push(MappingRule {
+            let m = MappingRule {
                 dest_range_start: p[0],
                 source_range_start: p[1],
                 range_length: p[2],
-            })
+            };
+            match dest {
+                "seed-to-soil" => alm.seeds_to_soil.push(m),
+                "soil-to-fertilizer" => alm.soil_to_fertilizer.push(m),
+                "fertilizer-to-water" => alm.fertilizer_to_water.push(m),
+                "water-to-light" => alm.water_to_light.push(m),
+                "light-to-temperature" => alm.light_to_temperature.push(m),
+                "temperature-to-humidity" => alm.temperature_to_humidity.push(m),
+                "humidity-to-location" => alm.humidity_to_location.push(m),
+                _ => {}
+            }
         }
     });
     alm
@@ -80,7 +217,7 @@ mod tests {
     #[test]
     fn test_part_one() {
         let result = part_one(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(35));
     }
 
     #[test]
