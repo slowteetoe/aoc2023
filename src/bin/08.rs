@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::alpha1,
+    character::complete::alphanumeric1,
     combinator::map,
     error,
     multi::{many1, separated_list1},
@@ -42,11 +42,11 @@ fn parse_nodes(input: &str) -> IResult<&str, Vec<(&str, &str, &str)>> {
             tag("\n"),
             map(
                 tuple((
-                    alpha1::<&str, error::Error<_>>, // node
+                    alphanumeric1::<&str, error::Error<_>>, // node
                     tag(" = ("),
-                    alpha1, // left
+                    alphanumeric1, // left
                     tag(", "),
-                    alpha1, // right
+                    alphanumeric1, // right
                     tag(")"),
                 )),
                 |t| (t.0, t.2, t.4), // (AAA, BBB, CCC)
@@ -93,8 +93,41 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(steps)
 }
 
+// FML - of course AoC tailors the input so that part two is too slow and we have to come up with a better algorithm...
+// Guessing this involves detecting a cycle for each of the starting points, and then figuring out where they intersect
+// e.g. from example sp1 hits an end node every 2 steps, sp2 hits an end node every 3 steps, so 2*3=6
+//
+// For now, I'm going to see just how fast cargo run --release is - can it complete if I let this run overnight?  I'm tired =/
+// Part 1 was 1.6ms
+// Part 2 is ...
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let (directions, nodes) = parse(input);
+    let mut curr: Vec<_> = nodes.keys().cloned().filter(|n| n.ends_with("A")).collect();
+    let total_starting_points = curr.len();
+    let mut directions = directions.iter().cycle();
+    let mut steps = 0;
+    loop {
+        steps += 1;
+        let dir = directions.next().unwrap();
+        let mut matches = 0;
+        curr = curr
+            .iter()
+            .map(|node| match dir {
+                Dir::L => nodes.get(node).unwrap().0,
+                Dir::R => nodes.get(node).unwrap().1,
+            })
+            .inspect(|n| {
+                if n.ends_with("Z") {
+                    matches += 1;
+                }
+            })
+            .collect();
+        // println!("went {:?} to arrive at {curr}", dir);
+        if matches == total_starting_points {
+            break;
+        }
+    }
+    Some(steps)
 }
 
 #[cfg(test)]
@@ -109,7 +142,18 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        let result = part_two(
+            "LR
+
+11A = (11B, XXX)
+11B = (XXX, 11Z)
+11Z = (11B, XXX)
+22A = (22B, XXX)
+22B = (22C, 22C)
+22C = (22Z, 22Z)
+22Z = (22B, 22B)
+XXX = (XXX, XXX)",
+        );
+        assert_eq!(result, Some(6));
     }
 }
