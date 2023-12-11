@@ -96,10 +96,6 @@ pub fn part_one(input: &str) -> Option<u32> {
 // FML - of course AoC tailors the input so that part two is too slow and we have to come up with a better algorithm...
 // Guessing this involves detecting a cycle for each of the starting points, and then figuring out where they intersect
 // e.g. from example sp1 hits an end node every 2 steps, sp2 hits an end node every 3 steps, so 2*3=6
-//
-// For now, I'm going to see just how fast cargo run --release is - can it complete if I let this run overnight?  I'm tired =/
-// Part 1 was 1.6ms
-// Part 2 is ...
 pub fn part_two(input: &str) -> Option<u32> {
     let (directions, nodes) = parse(input);
     let mut curr: Vec<_> = nodes.keys().cloned().filter(|n| n.ends_with("A")).collect();
