@@ -1,3 +1,4 @@
+use num::integer::lcm;
 use std::collections::BTreeMap;
 
 use nom::{
@@ -73,7 +74,7 @@ fn parse(input: &str) -> (Vec<Dir>, BTreeMap<&str, (&str, &str)>) {
     (directions, nodes)
 }
 
-pub fn part_one(input: &str) -> Option<u32> {
+pub fn part_one(input: &str) -> Option<u64> {
     let (directions, nodes) = parse(input);
     let mut curr = "AAA";
     let mut steps = 0;
@@ -93,37 +94,45 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(steps)
 }
 
-// FML - of course AoC tailors the input so that part two is too slow and we have to come up with a better algorithm...
-// Guessing this involves detecting a cycle for each of the starting points, and then figuring out where they intersect
-// e.g. from example sp1 hits an end node every 2 steps, sp2 hits an end node every 3 steps, so 2*3=6
-pub fn part_two(input: &str) -> Option<u32> {
+// Detect cycles for each of the starting nodes, then figure out least-common-multiple of all of them
+pub fn part_two(input: &str) -> Option<u64> {
     let (directions, nodes) = parse(input);
-    let mut curr: Vec<_> = nodes.keys().cloned().filter(|n| n.ends_with("A")).collect();
-    let total_starting_points = curr.len();
-    let mut directions = directions.iter().cycle();
-    let mut steps = 0;
-    loop {
-        steps += 1;
-        let dir = directions.next().unwrap();
-        let mut matches = 0;
-        curr = curr
-            .iter()
-            .map(|node| match dir {
-                Dir::L => nodes.get(node).unwrap().0,
-                Dir::R => nodes.get(node).unwrap().1,
-            })
-            .inspect(|n| {
-                if n.ends_with("Z") {
-                    matches += 1;
+    let starting_nodes: Vec<_> = nodes.keys().cloned().filter(|n| n.ends_with("A")).collect();
+    let mut cycles = vec![];
+
+    starting_nodes.iter().for_each(|node| {
+        let mut directions = directions.iter().cycle();
+        let mut steps = 0;
+        let orig = node;
+        let mut curr = node;
+        let mut first = None;
+        loop {
+            let dir = directions.next().unwrap();
+            let target = &nodes.get(curr).unwrap();
+            curr = match dir {
+                Dir::L => &target.0,
+                Dir::R => &target.1,
+            };
+
+            if first.is_none() {
+                first = Some(curr);
+            } else {
+                steps += 1;
+                if curr == first.unwrap() {
+                    println!("found cycle for {orig}, {steps} steps");
+                    cycles.push(steps);
+                    break;
                 }
-            })
-            .collect();
-        // println!("went {:?} to arrive at {curr}", dir);
-        if matches == total_starting_points {
-            break;
+            }
         }
-    }
-    Some(steps)
+    });
+
+    dbg!(&cycles);
+
+    // u128 max is: 340282366920938463463374607431768211455
+    // and coming up with: 1858646397880 so well within bounds
+    // so maybe something wrong with cycle counts?
+    Some(cycles.into_iter().fold(1, |acc, n| lcm(acc, n)))
 }
 
 #[cfg(test)]
