@@ -95,33 +95,57 @@ pub fn part_one(input: &str) -> Option<u64> {
 }
 
 // Detect cycles for each of the starting nodes, then figure out least-common-multiple of all of them
-pub fn part_two(input: &str) -> Option<u64> {
+pub fn part_two(input: &str) -> Option<u128> {
     let (directions, nodes) = parse(input);
-    let starting_nodes: Vec<_> = nodes.keys().cloned().filter(|n| n.ends_with("A")).collect();
+    let starting_nodes: Vec<_> = nodes
+        .keys()
+        .cloned()
+        .filter(|n| n.ends_with("A"))
+        // .take(2)
+        .collect();
     let mut cycles = vec![];
 
+    let direction_loop_size = directions.len();
+    println!("directions repeat every {:?} steps", direction_loop_size);
     starting_nodes.iter().for_each(|node| {
-        let mut directions = directions.iter().cycle();
+        let mut directions = directions.iter().enumerate().cycle();
         let mut steps = 0;
         let orig = node;
         let mut curr = node;
         let mut first = None;
+        // print!("{:?} ", curr);
+        let mut cycle_pos = None;
         loop {
-            let dir = directions.next().unwrap();
+            let (dir_pos, dir) = directions.next().unwrap();
             let target = &nodes.get(curr).unwrap();
             curr = match dir {
                 Dir::L => &target.0,
                 Dir::R => &target.1,
             };
+            // print!(" -({:?})-> {:?}", &dir, &curr);
 
             if first.is_none() {
                 first = Some(curr);
             } else {
                 steps += 1;
                 if curr == first.unwrap() {
-                    println!("found cycle for {orig}, {steps} steps");
-                    cycles.push(steps);
-                    break;
+                    // FIXME it isn't enough to be back at the original node, we also have to be at the same place in the directions loop?
+                    if cycle_pos.is_none() {
+                        // println!("found first cycle for {orig}, {steps} steps, but pos in dir vec is {}", dir_pos);
+                        cycle_pos = Some(dir_pos);
+                    } else {
+                        // println!("found cycle for {orig}, {steps} steps, but pos in dir vec is {} (adjusted: {})", dir_pos, (dir_pos % direction_loop_size));
+                        if dir_pos % direction_loop_size == cycle_pos.unwrap() {
+                            println!(
+                                "Success? {:?} {:?} after {:?} steps",
+                                cycle_pos.unwrap(),
+                                dir_pos,
+                                steps
+                            );
+                            cycles.push(steps);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -131,7 +155,7 @@ pub fn part_two(input: &str) -> Option<u64> {
 
     // u128 max is: 340282366920938463463374607431768211455
     // and coming up with: 1858646397880 so well within bounds
-    // so maybe something wrong with cycle counts?
+    // so maybe something wrong with cycle detection? (correct answer is 14265111103729)
     Some(cycles.into_iter().fold(1, |acc, n| lcm(acc, n)))
 }
 
