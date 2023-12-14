@@ -5,31 +5,37 @@ use regex::Regex;
 
 advent_of_code::solution!(12);
 
-// Might be able to just brute force this, at least for part 1
+// Can just brute force this, at least for part 1,
 // since there are only two possiblities for each position with a question mark...
 pub fn part_one(input: &str) -> Option<u32> {
     let data = parse(input);
     let a: u32 = data
         .iter()
-        .take(2)
         .map(|(positions, validation)| (resolve_one(&positions), build_regex(validation)))
         .map(|(inputs, validation_regex)| {
             let re = Regex::new(&validation_regex).unwrap();
-            inputs
-                .iter()
-                .unique()
-                .filter(|i| {
-                    if re.is_match(*i) {
-                        dbg!(&re, &i);
-                        true
-                    } else {
-                        false
-                    }
-                })
-                .count() as u32
+            inputs.iter().filter(|i| re.is_match(*i)).count() as u32
         })
         .sum();
     Some(a)
+}
+
+// lol, not a chance to brute force this one - will need to think it through...
+pub fn part_two(input: &str) -> Option<u32> {
+    let orig = parse(input);
+
+    let data = orig
+        .iter()
+        .map(|(line, rule)| {
+            (
+                // is there a way to repeat with a delimiter? this works though
+                format!(r"{}?{}?{}?{}?{}", &line, &line, &line, &line, &line),
+                rule.iter().cycle().take(rule.len() * 5).collect::<Vec<_>>(),
+            )
+        })
+        .collect_vec();
+    todo!();
+    None
 }
 
 fn build_regex(rule: &Vec<u32>) -> String {
@@ -49,11 +55,9 @@ fn build_regex(rule: &Vec<u32>) -> String {
 
 // each time, replace one placeholder with its possiblities
 pub fn resolve_one(input: &str) -> Vec<String> {
-    // println!("called with {:?}", input);
     if input.chars().filter(|c| *c == '?').count() == 1 {
         let period = input.replace("?", ".");
         let hash = input.replace("?", "#");
-        // dbg!(&period, &hash);
         return vec![period.to_owned(), hash.to_owned()];
     }
     let mut answer: Vec<String> = vec![];
@@ -67,10 +71,6 @@ pub fn resolve_one(input: &str) -> Vec<String> {
     answer
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    None
-}
-
 fn parse(input: &str) -> Vec<(&str, Vec<u32>)> {
     input
         .lines()
@@ -78,10 +78,12 @@ fn parse(input: &str) -> Vec<(&str, Vec<u32>)> {
             let mut s = line.split_whitespace();
             (
                 s.next().unwrap(),
+                // ouch, yet again, checking through the inputs is key.  There were some two-digit values that the original
+                // chars().filter_map(...) approach couldn't handle.
                 s.next()
                     .unwrap()
-                    .chars()
-                    .filter_map(|c| if c.is_numeric() { c.to_digit(10) } else { None })
+                    .split(',')
+                    .filter_map(|s| s.parse::<u32>().ok())
                     .collect(),
             )
         })
