@@ -10,25 +10,25 @@ enum Heading {
     W,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 struct Traveler {
-    steps_taken: u32,
     heading: Heading,
     current_pos: Point,
+    path_taken: Vec<Point>,
 }
 
 impl Traveler {
-    fn new(heading: Heading, pos: Point) -> Self {
+    fn new(starting_point: Point, heading: Heading, pos: Point) -> Self {
         Traveler {
-            steps_taken: 1,
             heading,
             current_pos: pos,
+            path_taken: vec![starting_point.clone()],
         }
     }
     fn move_to(&mut self, delta: Point, heading: Heading) {
-        self.steps_taken += 1;
         self.heading = heading;
         self.current_pos = self.current_pos + delta;
+        self.path_taken.push(self.current_pos);
     }
 }
 
@@ -126,33 +126,49 @@ pub fn part_one(input: &str) -> Option<u32> {
 
     if y > 0 && (map[y - 1][x] == '|' || map[y - 1][x] == '7' || map[y - 1][x] == 'F') {
         // north path
-        travelers.push(Traveler::new(Heading::N, Point(x as i32, (y - 1) as i32)));
+        travelers.push(Traveler::new(
+            starting_pos,
+            Heading::N,
+            Point(x as i32, (y - 1) as i32),
+        ));
     }
     if x > 0 && (map[y][x - 1] == '-' || map[y][x - 1] == 'L' || map[y][x - 1] == 'F') {
         // west path
-        travelers.push(Traveler::new(Heading::W, Point((x - 1) as i32, y as i32)));
+        travelers.push(Traveler::new(
+            starting_pos,
+            Heading::W,
+            Point((x - 1) as i32, y as i32),
+        ));
     }
     if y < map.len() - 1 && (map[y + 1][x] == '|' || map[y + 1][x] == 'L' || map[y + 1][x] == 'J') {
         // south path
-        travelers.push(Traveler::new(Heading::S, Point(x as i32, (y + 1) as i32)));
+        travelers.push(Traveler::new(
+            starting_pos,
+            Heading::S,
+            Point(x as i32, (y + 1) as i32),
+        ));
     }
     if x < map[0].len() - 1
         && (map[y][x + 1] == '-' || map[y][x + 1] == 'J' || map[y][x + 1] == '7')
     {
         // east path
-        travelers.push(Traveler::new(Heading::E, Point((x + 1) as i32, y as i32)));
+        travelers.push(Traveler::new(
+            starting_pos,
+            Heading::E,
+            Point((x + 1) as i32, y as i32),
+        ));
     }
     // now just run around the pipes until the two travelers meet at same spot
     // don't need to do any bounds checking since the pipes must be connected
-    let mut t1 = travelers[0];
-    let mut t2 = travelers[1];
+    let mut t1 = travelers[0].to_owned();
+    let mut t2 = travelers[1].to_owned();
     loop {
         if &map[t1.current_pos.1 as usize][t1.current_pos.0 as usize] == &'S' {
             panic!("loop completed without encountering t2, fail!");
         }
         if t1.current_pos == t2.current_pos {
             // when they intersect, it's the further point
-            return Some(t1.steps_taken);
+            return Some(t1.path_taken.len() as u32);
         }
         let t1next = next_step(
             &t1.heading,
@@ -168,7 +184,7 @@ pub fn part_one(input: &str) -> Option<u32> {
     }
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
+pub fn part_two(_input: &str) -> Option<u32> {
     None
 }
 
