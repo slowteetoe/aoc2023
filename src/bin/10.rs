@@ -35,6 +35,7 @@ impl Traveler {
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct Point(i32, i32);
 
+// not really Point, but was handy for being able to add current pos and a delta
 impl Add for Point {
     type Output = Point;
 
@@ -145,15 +146,13 @@ pub fn part_one(input: &str) -> Option<u32> {
     // don't need to do any bounds checking since the pipes must be connected
     let mut t1 = travelers[0];
     let mut t2 = travelers[1];
-    let mut answer = None;
     loop {
         if &map[t1.current_pos.1 as usize][t1.current_pos.0 as usize] == &'S' {
             panic!("loop completed without encountering t2, fail!");
         }
         if t1.current_pos == t2.current_pos {
             // when they intersect, it's the further point
-            answer = Some(t1.steps_taken);
-            break;
+            return Some(t1.steps_taken);
         }
         let t1next = next_step(
             &t1.heading,
@@ -167,7 +166,6 @@ pub fn part_one(input: &str) -> Option<u32> {
         );
         t2.move_to(t2next.1, t2next.0);
     }
-    answer
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
