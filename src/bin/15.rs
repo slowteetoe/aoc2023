@@ -5,23 +5,18 @@ pub fn part_one(input: &str) -> Option<u32> {
         .replace("\n", "")
         .split(",")
         .into_iter()
-        .map(|s| {
-            (
-                s,
-                s.chars().fold(0u32, |mut acc, c| {
-                    acc += c as u32;
-                    acc = acc * 17;
-                    acc = acc % 256;
-                    acc
-                }),
-            )
-        })
-        // .inspect(|v| {
-        //     dbg!(&v);
-        // })
-        .map(|(_, val)| val)
+        .map(|s| hash(s))
         .sum();
     Some(answer)
+}
+
+pub fn hash(s: &str) -> u32 {
+    s.chars().fold(0u32, |mut acc, c| {
+        acc += c as u32;
+        acc = acc * 17;
+        acc = acc % 256;
+        acc
+    })
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
