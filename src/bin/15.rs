@@ -3,12 +3,7 @@ use std::collections::BTreeMap;
 advent_of_code::solution!(15);
 
 pub fn hash(s: &str) -> u32 {
-    s.chars().fold(0u32, |mut acc, c| {
-        acc += c as u32;
-        acc = acc * 17;
-        acc = acc % 256;
-        acc
-    })
+    s.chars().fold(0u32, |acc, c| ((acc + c as u32) * 17) % 256)
 }
 
 #[derive(Debug)]
