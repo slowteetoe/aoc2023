@@ -79,15 +79,18 @@ fn display(layout: &Vec<Vec<Component>>, energized: &HashSet<(isize, isize)>) {
     });
 }
 
-pub fn part_one(input: &str) -> Option<u32> {
-    let layout = parse(input);
+fn bounce_around(
+    layout: &Vec<Vec<Component>>,
+    starting_pos: (isize, isize),
+    heading: Heading,
+) -> u32 {
     let mut beams = vec![Beam {
-        pos: (0, 0),
-        heading: Heading::R,
+        pos: starting_pos,
+        heading,
     }];
 
     let mut energized = HashSet::new();
-    energized.insert((0, 0));
+    energized.insert(beams[0].pos);
     let mut safety = 0;
     loop {
         // hopefully there won't be any cycles
@@ -198,11 +201,36 @@ pub fn part_one(input: &str) -> Option<u32> {
         // }
     }
     // display(&layout, &energized);
-    Some(energized.len() as u32)
+    energized.len() as u32
 }
 
-pub fn part_two(_input: &str) -> Option<u32> {
-    None
+pub fn part_one(input: &str) -> Option<u32> {
+    let layout = parse(input);
+    Some(bounce_around(&layout, (0, 0), Heading::R))
+}
+
+pub fn part_two(input: &str) -> Option<u32> {
+    let layout = parse(input);
+    let results = layout.iter().enumerate().map(|(y, components)| {
+        components
+            .iter()
+            .enumerate()
+            .filter_map(|(x, _component)| {
+                if y == 0 {
+                    Some(bounce_around(&layout, (x as isize, y as isize), Heading::D))
+                } else if y == (layout.len() - 1) {
+                    Some(bounce_around(&layout, (x as isize, y as isize), Heading::U))
+                } else if x == 0 {
+                    Some(bounce_around(&layout, (x as isize, y as isize), Heading::R))
+                } else if x % (layout[0].len() - 1) == 0 {
+                    Some(bounce_around(&layout, (x as isize, y as isize), Heading::L))
+                } else {
+                    None
+                }
+            })
+            .collect_vec()
+    });
+    results.flatten().max()
 }
 
 #[cfg(test)]
@@ -218,6 +246,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(51));
     }
 }
