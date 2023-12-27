@@ -73,9 +73,8 @@ pub fn part_two(input: &str) -> Option<u32> {
     let score = b
         .iter()
         .map(|(slot_num, v)| {
-            v.iter().enumerate().fold(0, |mut acc, (pos_in_box, lens)| {
-                acc += (**slot_num + 1) * ((pos_in_box + 1) as u32 * lens.focal_length);
-                acc
+            v.iter().enumerate().fold(0, |acc, (pos_in_box, lens)| {
+                acc + (**slot_num + 1) * ((pos_in_box + 1) as u32 * lens.focal_length)
             })
         })
         .sum();
