@@ -12,7 +12,7 @@ use nom::{
 
 advent_of_code::solution!(18);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Dir {
     U,
     D,
@@ -34,7 +34,7 @@ impl FromStr for Dir {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Instruction {
     direction: Dir,
     steps: usize,
@@ -71,7 +71,7 @@ fn parse(input: &str) -> Vec<Instruction> {
     parse_lines(input).unwrap().1
 }
 
-fn display(boundary: &BTreeSet<(i32, i32)>, insides: &BTreeSet<(i32, i32)>) {
+fn _display(boundary: &BTreeSet<(i32, i32)>, insides: &BTreeSet<(i32, i32)>) {
     let min_x = boundary.iter().map(|pt| pt.0).min().unwrap();
     let min_y = boundary.iter().map(|pt| pt.1).min().unwrap();
     // assert!(min_x == min_y && min_x == 0, "origin is not (0,0)");
@@ -97,7 +97,6 @@ fn fill(boundary: &BTreeSet<(i32, i32)>, start: (i32, i32)) -> BTreeSet<(i32, i3
     let mut insides = BTreeSet::new();
     loop {
         if frontier.is_empty() {
-            println!("done");
             break;
         }
         frontier = frontier
@@ -131,6 +130,25 @@ fn fill(boundary: &BTreeSet<(i32, i32)>, start: (i32, i32)) -> BTreeSet<(i32, i3
     insides
 }
 
+fn to_instr(hexcolor: &str) -> Instruction {
+    // skip the hashmark
+    let distance = &hexcolor[1..6];
+    let steps = usize::from_str_radix(distance, 16).unwrap();
+
+    let direction = match &hexcolor.chars().nth(6).unwrap() {
+        '3' => Dir::U,
+        '1' => Dir::D,
+        '2' => Dir::L,
+        '0' => Dir::R,
+        _ => unreachable!(),
+    };
+    Instruction {
+        direction,
+        steps,
+        color: String::from(""),
+    }
+}
+
 pub fn part_one(input: &str) -> Option<u32> {
     use crate::Dir as D;
     let instructions = parse(input);
@@ -156,11 +174,18 @@ pub fn part_one(input: &str) -> Option<u32> {
     });
 
     let insides = fill(&boundary, (1, 1));
-    display(&boundary, &insides);
+    // display(&boundary, &insides);
     Some(boundary.len() as u32 + insides.len() as u32)
 }
 
+// yup, part 1 took 14s in release mode, there's no way this will run without a better algorithm
+// let's at least parse out the new instructions though
 pub fn part_two(input: &str) -> Option<u32> {
+    let _instructions = parse(input)
+        .iter()
+        .map(|i| to_instr(&format!("#{}", &i.color)))
+        .collect_vec();
+    // dbg!(&instructions);
     None
 }
 
@@ -178,5 +203,121 @@ mod tests {
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
         assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_conversion() {
+        assert_eq!(
+            to_instr("#70c710"),
+            Instruction {
+                direction: Dir::R,
+                steps: 461937,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#0dc571"),
+            Instruction {
+                direction: Dir::D,
+                steps: 56407,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#5713f0"),
+            Instruction {
+                direction: Dir::R,
+                steps: 356671,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#d2c081"),
+            Instruction {
+                direction: Dir::D,
+                steps: 863240,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#59c680"),
+            Instruction {
+                direction: Dir::R,
+                steps: 367720,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#411b91"),
+            Instruction {
+                direction: Dir::D,
+                steps: 266681,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#8ceee2"),
+            Instruction {
+                direction: Dir::L,
+                steps: 577262,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#caa173"),
+            Instruction {
+                direction: Dir::U,
+                steps: 829975,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#1b58a2"),
+            Instruction {
+                direction: Dir::L,
+                steps: 112010,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#caa171"),
+            Instruction {
+                direction: Dir::D,
+                steps: 829975,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#7807d2"),
+            Instruction {
+                direction: Dir::L,
+                steps: 491645,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#a77fa3"),
+            Instruction {
+                direction: Dir::U,
+                steps: 686074,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#015232"),
+            Instruction {
+                direction: Dir::L,
+                steps: 5411,
+                color: String::from("")
+            }
+        );
+        assert_eq!(
+            to_instr("#7a21e3"),
+            Instruction {
+                direction: Dir::U,
+                steps: 500254,
+                color: String::from("")
+            }
+        );
     }
 }
