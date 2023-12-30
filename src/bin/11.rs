@@ -62,24 +62,31 @@ fn points_from(image: &Vec<Vec<char>>) -> Vec<(usize, usize)> {
 pub fn part_one(input: &str) -> Option<u32> {
     let image = parse(input);
     let expanded = expand(image);
-    // dbg!(&expanded);
     let points = points_from(&expanded);
-    let n = points.len();
-    println!(
-        "we will have to look at {} unique pairs of points",
-        n * (n - 1) / 2
-    );
+    // let n = points.len();
+    // println!(
+    //     "we will have to look at {} unique pairs of points",
+    //     n * (n - 1) / 2
+    // );
     let unique_points = points.iter().combinations(2).collect_vec();
-    unique_points.iter().for_each(|pt| {
-        println!(
-            "need to calculate  distance between {:?} and {:?}",
-            pt[0], pt[1]
-        );
-    });
-    None
+    let result = unique_points
+        .iter()
+        .map(|pt| {
+            // println!(
+            //     "need to calculate  distance between {:?} and {:?}",
+            //     pt[0], pt[1]
+            // );
+            manhattan(pt[0], pt[1]) as u32
+        })
+        .sum();
+    Some(result)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
+fn manhattan(pt1: &(usize, usize), pt2: &(usize, usize)) -> i32 {
+    i32::abs(pt1.0 as i32 - pt2.0 as i32) + i32::abs(pt1.1 as i32 - pt2.1 as i32)
+}
+
+pub fn part_two(_input: &str) -> Option<u32> {
     None
 }
 
@@ -90,7 +97,7 @@ mod tests {
     #[test]
     fn test_part_one() {
         let result = part_one(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(374));
     }
 
     #[test]
