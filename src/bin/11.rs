@@ -63,7 +63,19 @@ pub fn part_one(input: &str) -> Option<u32> {
     let image = parse(input);
     let expanded = expand(image);
     // dbg!(&expanded);
-    dbg!(points_from(&expanded));
+    let points = points_from(&expanded);
+    let n = points.len();
+    println!(
+        "we will have to look at {} unique pairs of points",
+        n * (n - 1) / 2
+    );
+    let unique_points = points.iter().combinations(2).collect_vec();
+    unique_points.iter().for_each(|pt| {
+        println!(
+            "need to calculate  distance between {:?} and {:?}",
+            pt[0], pt[1]
+        );
+    });
     None
 }
 
