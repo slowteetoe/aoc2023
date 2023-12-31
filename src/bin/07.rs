@@ -48,89 +48,74 @@ impl FromStr for Card {
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 enum Rank {
-    FiveOfKind(Card),
-    FourOfKind(Card, Card),
-    FullHouse(Card, Card),
-    ThreeOfKind(Card, Card, Card),
-    TwoPair(Card, Card, Card),
-    OnePair(Card, Card, Card, Card),
-    HighCard(Card, Card, Card, Card, Card),
+    FiveOfKind,
+    FourOfKind,
+    FullHouse,
+    ThreeOfKind,
+    TwoPair,
+    OnePair,
+    HighCard,
     Unmapped,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 struct Hand {
-    cards: BTreeMap<Card, usize>,
+    cards: Vec<Card>,
     bid: u32,
     rank: Rank,
 }
 
+impl PartialOrd for Hand {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.rank == other.rank {
+            let mut n = 0;
+            loop {
+                if self.cards[n] != other.cards[n] {
+                    return self.cards[n].partial_cmp(&other.cards[n]);
+                }
+                n += 1;
+            }
+        } else {
+            self.rank.partial_cmp(&other.rank)
+        }
+    }
+}
+
 impl Hand {
-    fn new(cards: BTreeMap<Card, usize>, bid: u32) -> Self {
+    fn new(cards: Vec<Card>, bid: u32) -> Self {
+        let orig = cards.clone();
+        let cards = cards.iter().fold(BTreeMap::new(), |mut acc, c| {
+            acc.entry(*c).and_modify(|e| *e += 1usize).or_insert(1);
+            acc
+        });
         let tups = cards.iter().map(|(k, v)| (*k, *v)).collect_vec();
         let rank = match tups.len() {
-            5 => {
-                let mut cards = tups.iter().map(|(c, _)| *c).collect_vec();
-                cards.sort();
-                Rank::HighCard(cards[0], cards[1], cards[2], cards[3], cards[4])
-            }
-            4 => {
-                let pair = tups.iter().find(|(_card, count)| *count == 2).unwrap().0;
-                let mut rest = tups
-                    .iter()
-                    .filter(|(_card, count)| *count != 2)
-                    .map(|(card, _)| *card)
-                    .collect_vec();
-                rest.sort();
-                // one pair
-                Rank::OnePair(pair, rest[0], rest[1], rest[2])
-            }
+            5 => Rank::HighCard,
+            4 => Rank::OnePair,
             3 => {
-                // Three of a kind
                 let three = tups.iter().find(|(_card, count)| *count == 3);
                 if three.is_some() {
-                    let mut rest = tups
-                        .iter()
-                        .filter(|(_card, count)| *count != 3)
-                        .map(|(card, _)| *card)
-                        .collect_vec();
-                    rest.sort();
-                    Rank::ThreeOfKind(three.unwrap().0, rest[0], rest[1])
+                    Rank::ThreeOfKind
                 } else {
-                    // Two pair
-                    let mut rest = tups
-                        .iter()
-                        .filter(|(_card, count)| *count == 2)
-                        .map(|(card, _)| *card)
-                        .collect_vec();
-                    rest.sort();
-                    Rank::TwoPair(
-                        rest[0],
-                        rest[1],
-                        tups.iter().find(|(_card, count)| *count == 1).unwrap().0,
-                    )
+                    Rank::TwoPair
                 }
             }
             2 => {
-                // Four of a kind
                 let four = tups.iter().find(|(_card, count)| *count == 4);
                 if four.is_some() {
-                    Rank::FourOfKind(
-                        four.unwrap().0,
-                        tups.iter().find(|(_card, count)| *count == 1).unwrap().0,
-                    )
+                    Rank::FourOfKind
                 } else {
-                    // Full House
-                    Rank::FullHouse(
-                        tups.iter().find(|(_card, count)| *count == 3).unwrap().0,
-                        tups.iter().find(|(_card, count)| *count == 2).unwrap().0,
-                    )
+                    Rank::FullHouse
                 }
             }
-            1 => Rank::FiveOfKind(tups.iter().nth(0).unwrap().0),
+            1 => Rank::FiveOfKind,
             _ => Rank::Unmapped,
         };
-        Self { cards, bid, rank }
+        Self {
+            cards: orig,
+            bid,
+            rank,
+        }
     }
 }
 
@@ -143,10 +128,7 @@ fn parse_hands(input: &str) -> Vec<Hand> {
             let cards = hand
                 .chars()
                 .map(|c| Card::from_str(c.to_string().as_str()).unwrap())
-                .fold(BTreeMap::new(), |mut acc, c| {
-                    acc.entry(c).and_modify(|e| *e += 1usize).or_insert(1);
-                    acc
-                });
+                .collect_vec();
             Hand::new(cards, bid)
         })
         .collect_vec()
@@ -154,20 +136,12 @@ fn parse_hands(input: &str) -> Vec<Hand> {
 
 pub fn part_one(input: &str) -> Option<u64> {
     let mut hands = parse_hands(input);
-    hands.sort_by(|a, b| a.rank.cmp(&b.rank));
+    hands.sort_by(|a, b| a.partial_cmp(&b).unwrap());
     hands.reverse();
     // dbg!(&hands);
     let answer = hands.iter().enumerate().fold(0, |acc, (rank, hand)| {
-        println!(
-            "{:?} wins {:?}x{} = {}",
-            hand.rank,
-            rank + 1,
-            hand.bid,
-            ((rank + 1) as u64 * hand.bid as u64)
-        );
         acc + ((rank + 1) as u64 * hand.bid as u64)
     });
-    // 255940725
     Some(answer)
 }
 
