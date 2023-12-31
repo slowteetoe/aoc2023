@@ -20,6 +20,7 @@ pub enum Card {
     Four,
     Three,
     Two,
+    Joker,
 }
 
 impl FromStr for Card {
@@ -55,7 +56,6 @@ enum Rank {
     TwoPair,
     OnePair,
     HighCard,
-    Unmapped,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -81,14 +81,40 @@ impl PartialOrd for Hand {
     }
 }
 
+#[derive(PartialEq)]
+enum Modifier {
+    WithJokers,
+    None,
+}
+
 impl Hand {
-    fn new(cards: Vec<Card>, bid: u32) -> Self {
-        let orig = cards.clone();
-        let cards = cards.iter().fold(BTreeMap::new(), |mut acc, c| {
+    fn new(cards: Vec<Card>, bid: u32, modifier: Modifier) -> Self {
+        let card_map = cards.iter().fold(BTreeMap::new(), |mut acc, c| {
             acc.entry(*c).and_modify(|e| *e += 1usize).or_insert(1);
             acc
         });
-        let tups = cards.iter().map(|(k, v)| (*k, *v)).collect_vec();
+        let mut tups = card_map.iter().map(|(k, v)| (*k, *v)).collect_vec();
+        if modifier == Modifier::WithJokers {
+            if let Some((_, jokers_count)) = tups.iter().find(|(card, _)| *card == Card::Joker) {
+                if *jokers_count != 5 {
+                    // as long as there aren't 5 jokers (really, FIVE jokers?), find the highest card(s) and add the joker(s) to that count
+                    let mut tmp = tups
+                        .iter()
+                        .filter(|(card, _)| *card != Card::Joker)
+                        .map(|c| *c)
+                        .collect_vec();
+                    tmp.sort_by(|a, b| {
+                        if b.1 == a.1 {
+                            b.0.cmp(&a.0)
+                        } else {
+                            b.1.cmp(&a.1)
+                        }
+                    });
+                    tmp[0].1 += jokers_count;
+                    tups = tmp;
+                }
+            }
+        }
         let rank = match tups.len() {
             5 => Rank::HighCard,
             4 => Rank::OnePair,
@@ -109,13 +135,9 @@ impl Hand {
                 }
             }
             1 => Rank::FiveOfKind,
-            _ => Rank::Unmapped,
+            _ => unreachable!("hand did not map to a known rank"),
         };
-        Self {
-            cards: orig,
-            bid,
-            rank,
-        }
+        Self { cards, bid, rank }
     }
 }
 
@@ -129,7 +151,24 @@ fn parse_hands(input: &str) -> Vec<Hand> {
                 .chars()
                 .map(|c| Card::from_str(c.to_string().as_str()).unwrap())
                 .collect_vec();
-            Hand::new(cards, bid)
+            Hand::new(cards, bid, Modifier::None)
+        })
+        .collect_vec()
+}
+
+fn parse_hands_with_jokers(input: &str) -> Vec<Hand> {
+    input
+        .lines()
+        .map(|line| {
+            let (hand, bid) = line.split_ascii_whitespace().collect_tuple().unwrap();
+            let bid = bid.parse::<u32>().unwrap();
+            let cards = hand
+                .chars()
+                .map(|c| Card::from_str(c.to_string().as_str()).unwrap())
+                // 'J' are now Jokers
+                .map(|c| if c == Card::Jack { Card::Joker } else { c })
+                .collect_vec();
+            Hand::new(cards, bid, Modifier::WithJokers)
         })
         .collect_vec()
 }
@@ -138,15 +177,20 @@ pub fn part_one(input: &str) -> Option<u64> {
     let mut hands = parse_hands(input);
     hands.sort_by(|a, b| a.partial_cmp(&b).unwrap());
     hands.reverse();
-    // dbg!(&hands);
     let answer = hands.iter().enumerate().fold(0, |acc, (rank, hand)| {
         acc + ((rank + 1) as u64 * hand.bid as u64)
     });
     Some(answer)
 }
 
-pub fn part_two(_input: &str) -> Option<u32> {
-    None
+pub fn part_two(input: &str) -> Option<u64> {
+    let mut hands = parse_hands_with_jokers(input);
+    hands.sort_by(|a, b| a.partial_cmp(&b).unwrap());
+    hands.reverse();
+    let answer = hands.iter().enumerate().fold(0, |acc, (rank, hand)| {
+        acc + ((rank + 1) as u64 * hand.bid as u64)
+    });
+    Some(answer)
 }
 
 #[cfg(test)]
@@ -162,6 +206,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(5905));
     }
 }
