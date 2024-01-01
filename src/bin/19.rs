@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::BTreeMap, str::FromStr};
 
 use anyhow::{Error, Result};
 use itertools::Itertools;
@@ -27,7 +27,7 @@ enum Rule {
     Otherwise(Target),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 enum Target {
     Accepted,
     Rejected,
@@ -47,7 +47,7 @@ impl FromStr for Target {
 }
 
 // a<2006:qkq m>2090:A rfg
-fn parse_rule(input: &str) -> IResult<&str, Rule> {
+fn parse_ruleset(input: &str) -> IResult<&str, Rule> {
     let (input, name) = alpha1(input)?;
     // just the "otherwise" rule
     if input.starts_with("}") {
@@ -72,14 +72,17 @@ fn parse_rule(input: &str) -> IResult<&str, Rule> {
 //{a<2006:qkq,m>2090:A,rfg}
 fn parse_rules(input: &str) -> IResult<&str, (String, Vec<Rule>)> {
     let (input, node_name) = alpha1(input)?;
-    dbg!(&node_name);
     Ok((
         input,
         (
             node_name.to_owned(),
-            delimited(char('{'), separated_list1(char(','), parse_rule), char('}'))(input)
-                .unwrap()
-                .1,
+            delimited(
+                char('{'),
+                separated_list1(char(','), parse_ruleset),
+                char('}'),
+            )(input)
+            .unwrap()
+            .1,
         ),
     ))
 }
@@ -105,20 +108,119 @@ fn parse_part(input: &str) -> Result<Part> {
     })
 }
 
+fn determine_applicable_rule(
+    part: &Part,
+    workflow_name: &str,
+    rules: &BTreeMap<String, Vec<Rule>>,
+) -> Target {
+    let applicable_rules = rules.get(workflow_name).unwrap();
+    applicable_rules
+        .iter()
+        .filter_map(|r| match r {
+            Rule::LessThan(field, amount, workflow) => match field.as_str() {
+                "x" => {
+                    if part.x < *amount {
+                        Some(workflow.clone())
+                    } else {
+                        None
+                    }
+                }
+                "m" => {
+                    if part.m < *amount {
+                        Some(workflow.clone())
+                    } else {
+                        None
+                    }
+                }
+                "a" => {
+                    if part.a < *amount {
+                        Some(workflow.clone())
+                    } else {
+                        None
+                    }
+                }
+                "s" => {
+                    if part.s < *amount {
+                        Some(workflow.clone())
+                    } else {
+                        None
+                    }
+                }
+                _ => unreachable!(),
+            },
+            Rule::GreaterThan(field, amount, workflow) => match field.as_str() {
+                "x" => {
+                    if part.x > *amount {
+                        Some(workflow.clone())
+                    } else {
+                        None
+                    }
+                }
+                "m" => {
+                    if part.m > *amount {
+                        Some(workflow.clone())
+                    } else {
+                        None
+                    }
+                }
+                "a" => {
+                    if part.a > *amount {
+                        Some(workflow.clone())
+                    } else {
+                        None
+                    }
+                }
+                "s" => {
+                    if part.s > *amount {
+                        Some(workflow.clone())
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            },
+            Rule::Otherwise(workflow) => Some(workflow.clone()),
+        })
+        .nth(0)
+        .unwrap()
+}
+
 pub fn part_one(input: &str) -> Option<u32> {
     let (rules_input, parts_input) = input.split_once("\n\n").unwrap();
 
     let rules = rules_input
         .lines()
         .map(|line| parse_rules(line).unwrap().1)
-        .collect_vec();
+        .collect::<BTreeMap<String, Vec<Rule>>>();
 
     let parts = parts_input
         .lines()
         .map(|line| parse_part(line).unwrap())
         .collect_vec();
-    dbg!(&rules, &parts);
-    None
+    // dbg!(&rules, &parts);
+
+    let mut sum = 0;
+    parts.iter().for_each(|part| {
+        let mut ultimate_dest = determine_applicable_rule(part, "in", &rules);
+        // apply rules for 'in'
+        loop {
+            if ultimate_dest == Target::Rejected {
+                break;
+            } else if ultimate_dest == Target::Accepted {
+                sum += part.x + part.m + part.a + part.s;
+                break;
+            } else {
+                // run the next rule
+                let next_dest = if let Target::Workflow(workflow_name) = ultimate_dest {
+                    workflow_name
+                } else {
+                    unreachable!()
+                };
+                ultimate_dest = determine_applicable_rule(part, &next_dest, &rules);
+            }
+        }
+    });
+    Some(sum)
 }
 
 pub fn part_two(_input: &str) -> Option<u32> {
@@ -132,7 +234,7 @@ mod tests {
     #[test]
     fn test_part_one() {
         let result = part_one(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(19114));
     }
 
     #[test]
